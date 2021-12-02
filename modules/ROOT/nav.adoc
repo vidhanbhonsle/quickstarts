@@ -1,4 +1,5 @@
 * Get access to Vantage
+** xref::getting.started.cloud.adoc[Vantage Express as-a-Service]
 ** xref::getting.started.vmware.adoc[Vantage Express on VMware]
 ** xref::getting.started.vbox.adoc[Vantage Express on VirtualBox]
 * Basics

@@ -1,0 +1,253 @@
+= Use Vantage Express as-a-Service
+:page-author: Adam Tworkiewicz
+:page-email: adam.tworkiewicz@teradata.com
+:page-revdate: December 2nd, 2021
+:description: Use hosted Vantage Express.
+:keywords: data warehouses, compute storage separation, teradata, vantage, cloud data platform, object storage, business intelligence, enterprise analytics
+:icons: font
+:experimental:
+:tabs:
+
+== Overview
+
+IMPORTANT: Vantage Express as-a-Service and td CLI are currently in preview. If you would like to get access to hosted Vantage Express and td CLI, please contact us at developers@teradata.com.
+
+This quick start shows the fastest way to gain access to a Teradata database by using Vantage Express as-a-Service. You will be able to run your first Vantage query in less than 5 minutes.
+
+== Provision a Vantage Express instance
+
+[tabs]
+====
+Console::
++
+--
+1. Go to https://console.vantage.teradata.com/ and log in. If this is your first time accessing Vantage Console, you will need to register first.
+2. Go to `Vantage Express as-a-Service` tab and select `Provision a new instance`.
+3. Copy the connection url. You will need it in subsequent steps of this tutorial.
+--
+tdcli::
++
+--
+[source, bash, role="content-editable emits-gtm-events", id="cloud_create_instance_cli"]
+----
+td instances create my-test-instance --region=us-central
+----
+--
+REST::
++
+--
+[source, bash, role="content-editable emits-gtm-events", id="cloud_create_instance_rest_api"]
+----
+POST https://www.teradataapis.com/vantage/v1/regions/us-central/instances
+{
+  "name": "my-test-instance",
+  "tags": {
+    "items": ["test-instance"]
+  },
+  "region": "us-central"
+}
+----
+--
+====
+
+== Run sample queries
+
+. Let's connect to your newly created Vantage Express instance. Please paste the connection string and press `Connect`:
++
+[source, id="connect-db", role="emits-gtm-events content-editable"]
+----
+tdqs://dbc:dbc@localhost:1443
+----
++
+++++
+<button title="Connect" class="run-query" onclick="connect('connect-db', 'connect-db-result')">Connect</button>
+++++
++
+Result:
++
+[source, id="connect-db-result"]
+----
+----
+. We will now run some queries against the hosted Vantage Express instance. Let's first create a new database:
++
+[source, sql, id="create-db-query", role="emits-gtm-events content-editable"]
+----
+CREATE DATABASE HR
+AS PERMANENT = 60e6, -- 60MB
+    SPOOL = 120e6; -- 120MB
+----
++
+++++
+<button title="Run query" class="run-query" onclick="runQuery('create-db-query', 'create-db-query-result')">Run query</button>
+++++
++
+Result:
++
+[source, id="create-db-query-result"]
+----
+----
+. Now, let's create a sample table and insert some data and query it. We will first create a table to hold employee information:
++
+[source, sql, id="create-table-query", role="emits-gtm-events content-editable"]]
+----
+
+CREATE SET TABLE HR.Employees (
+   GlobalID INTEGER,
+   FirstName VARCHAR(30),
+   LastName VARCHAR(30),
+   DateOfBirth DATE FORMAT 'YYYY-MM-DD',
+   JoinedDate DATE FORMAT 'YYYY-MM-DD',
+   DepartmentCode BYTEINT
+)
+UNIQUE PRIMARY INDEX ( GlobalID );
+----
++
+++++
+<button title="Run query" class="run-query" onclick="runQuery('create-table-query', 'create-table-query-result')">Run query</button>
+++++
++
+Result:
++
+[source, id="create-table-query-result"]
+----
+----
+. Insert a record:
++
+[source, sql, id="insert-query", role="emits-gtm-events content-editable"]]
+----
+INSERT INTO HR.Employees (
+   GlobalID,
+   FirstName,
+   LastName,
+   DateOfBirth,
+   JoinedDate,
+   DepartmentCode
+)
+VALUES (
+   101,
+   'Adam',
+   'Tworkowski',
+   '1980-01-05',
+   '2004-08-01',
+   01
+);
+----
++
+++++
+<button title="Run query" class="run-query" onclick="runQuery('insert-query', 'insert-query-result')">Run query</button>
+++++
++
+Result:
++
+[source, id="insert-query-result"]
+----
+----
+. Finally, let's see if we can retrieve the data:
++
+[source, sql, id="select-query", role="emits-gtm-events content-editable"]]
+----
+SELECT *
+FROM HR.Employees;
+----
++
+++++
+<button title="Run query" class="run-query" onclick="runQuery('select-query', 'select-query-result')">Run query</button>
+++++
++
+Result:
++
+[source, id="select-query-result"]
+----
+----
+
+
+include::partial$getting.started.summary.adoc[]
+
+include::partial$next.steps.adoc[]
+
+
+++++
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/3.5.0/jquery.min.js"></script>
+<script>
+function connect(connectionStringContainerName, resultContainerName) {
+  var connectionString = document.querySelector(`#${connectionStringContainerName} div pre code`).innerText;
+  var resultContainer = document.querySelector(`#${resultContainerName} .content pre code`);
+  var username = 'dbc';
+  var password = 'dbc';
+  var url = `https://${connectionString.split('@')[1]}/systems`
+  $.ajax({
+        type: "GET",
+        url: url,
+        contentType: "application/json",
+        headers: {
+            'Accept' : "application/vnd.com.teradata.rest-v1.0+json",
+            'Authorization': 'Basic ' + btoa(username + ':' + password)
+        },
+        timeout: 3000
+    }).done(function (data)
+    {
+      resultContainer.innerText = "Connection successful";
+      window.connectionString = connectionString;
+    }).fail (function (error)
+    {
+      resultContainer.innerText = JSON.stringify(error, null, 2);
+    })
+}
+
+function runQuery(sqlContainerName, resultContainerName) {
+    var sql = document.querySelector(`#${sqlContainerName} div pre code`).innerText;
+    var resultContainer = document.querySelector(`#${resultContainerName} .content pre code`);
+    var username = 'dbc';
+    var password = 'dbc';
+    var url = `https://${connectionString.split('@')[1]}/systems/local/queries`;
+
+    $.ajax({
+        type: "POST",
+        url: url,
+        contentType: "application/json",
+        headers: {
+            'Accept' : "application/vnd.com.teradata.rest-v1.0+json",
+            'Authorization': 'Basic ' + btoa(username + ':' + password)
+        },
+        data: JSON.stringify({
+            query: sql,
+            format: 'object'
+        }),
+    }).done(function (data)
+    {
+        // resultContainer.innerText = JSON.stringify(data, null, 2);
+        if (data.results[0].data) {
+          var table = new window.AsciiTable();
+          var header = [];
+          for (row of data.results[0].data) {
+            var tableRow = [];
+            for (const [key, value] of Object.entries(row)) {
+              tableRow.push(value);
+            }
+            table.addRow(tableRow);
+          }
+          for (const [key, value] of Object.entries(data.results[0].data[0])) {
+            header.push(key);
+          }
+          table.setHeading(header);
+          var lines = table.toString().split('\n');
+          lines.shift();
+          lines.pop();
+          resultContainer.innerText = lines.join('\n');;
+        } else {
+          resultContainer.innerText = "Query executed successfully";
+        }
+    }).fail (function (error)
+    {
+        resultContainer.innerText = JSON.stringify(error.responseJSON, null, 2);
+    })
+
+    $("#query").text("Executing query: " + sql);
+}
+</script>
+<style>
+  button.run-query {
+    margin-top: 10px;
+  }
+</style>
+++++
